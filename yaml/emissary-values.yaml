@@ -1,0 +1,23 @@
+image:
+  repository: emissary.local/emissary
+  tag: latest
+
+replicaCount: 1
+
+podAnnotations:
+  proxy.istio.io/config: |
+    holdApplicationUntilProxyStarts: true
+    proxyMetadata:
+      OUTPUT_CERTS: /etc/istio-certs
+  sidecar.istio.io/inject: "true"
+  sidecar.istio.io/agentLogLevel: debug
+  sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-certs"}]'
+  traffic.sidecar.istio.io/includeInboundPorts: ""
+  traffic.sidecar.istio.io/includeOutboundIPRanges: ""
+volumeMounts:
+  - mountPath: /etc/istio-certs/
+    name: istio-certs
+volumes:
+  - name: istio-certs
+    emptyDir:
+      medium: Memory

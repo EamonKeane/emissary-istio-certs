@@ -14,6 +14,10 @@ kubectl:
     FROM bitnami/kubectl
     SAVE ARTIFACT /opt/bitnami/kubectl/bin/kubectl /kubectl
 
+istioctl:
+    FROM istio/istioctl:1.17.1
+    SAVE ARTIFACT /usr/local/bin/istioctl /istioctl
+
 golang:
     FROM golang:1.20.1
     SAVE ARTIFACT /usr/local/go/bin/go /go
@@ -40,17 +44,24 @@ emissary-dockerfile:
 test:
     FROM earthly/dind:alpine
     COPY +emissary-dockerfile/emissary-docker.tar.gz ./
-    RUN apk add curl gzip
+    COPY --dir yaml ./
+    COPY Taskfile.yml ./
+    RUN apk add curl gzip bash go-task-task
     RUN gunzip emissary-docker.tar.gz
     RUN curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.17.0/kind-linux-arm64 && \
                             chmod +x ./kind && \
                             mv ./kind /usr/local/bin/kind
     COPY +kubectl/kubectl /usr/local/bin/kubectl
+    COPY +istioctl/istioctl /usr/local/bin/istioctl
+    RUN curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    RUN helm repo add datawire https://app.getambassador.io && helm repo update
     WITH DOCKER
-          RUN sleep 30 &&  \
-          kind create cluster && \
-          kind load image-archive ./emissary-docker.tar && \
-          kubectl create deployment emissary --image=emissary.local/emissary:latest
+          RUN sleep 5 &&  \
+          task kind && \
+          task install-istio && \
+          task install-emissary && \
+          task emissary-crs && \
+          task restart-emissary
     END
 
 all:

@@ -1,4 +1,19 @@
 version: 3
 tasks:
   earthly: earthly --allow-privileged --interactive --verbose +all
-  docker-registry: docker run -d -p 5001:5000 --restart=always --name registry registry:2
+  emissary-crs: kubectl apply -f yaml/emissary-crs
+  restart-emissary: kubectl rollout restart deployment/emissary-ingress -n emissary
+  install-emissary:
+    cmds:
+      - kubectl apply -f https://app.getambassador.io/yaml/emissary/3.5.1/emissary-crds.yaml
+      - kubectl wait --timeout=90s --for=condition=available deployment emissary-apiext -n emissary-system
+      - helm upgrade --install -n emissary --create-namespace emissary-ingress datawire/emissary-ingress --version 8.5.1 --values yaml/emissary-values.yaml
+      - kubectl label namespace emissary istio-injection=enabled
+      - kubectl rollout status  -n emissary deployment/emissary-ingress -w
+  install-istio:
+    cmds:
+      - istioctl install --skip-confirmation --verify
+  kind:
+    cmds:
+      - kind create cluster
+      - kind load image-archive ./emissary-docker.tar
