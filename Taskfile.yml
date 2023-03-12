@@ -3,10 +3,16 @@ tasks:
   earthly: earthly --allow-privileged --interactive --verbose +all
   emissary-crs: kubectl apply -f yaml/emissary-crs
   restart-emissary: kubectl rollout restart deployment/emissary-ingress -n emissary
+  open-ambassador-admin: kubectl port-forward deploy/emissary-ingress 8877:8877
+  dump-enovy-config:
+    cmds:
+      - kubectl exec deploy/emissary-ingress -n emissary -- curl localhost:15000/config_dump --output /tmp/envoy.json
+      - kubectl cp -n emissary $(kubectl get pod -o jsonpath={..metadata.name} -l app.kubernetes.io/instance=emissary-ingress,app.kubernetes.io/name=emissary-ingress):/tmp/envoy.json ./envoy.json
   install-emissary:
     cmds:
       - kubectl apply -f https://app.getambassador.io/yaml/emissary/3.5.1/emissary-crds.yaml
       - kubectl wait --timeout=90s --for=condition=available deployment emissary-apiext -n emissary-system
+      - sleep 20
       - helm upgrade --install -n emissary --create-namespace emissary-ingress datawire/emissary-ingress --version 8.5.1 --values yaml/emissary-values.yaml
       - kubectl label namespace emissary istio-injection=enabled
       - kubectl rollout status  -n emissary deployment/emissary-ingress -w
@@ -15,5 +21,14 @@ tasks:
       - istioctl install --skip-confirmation --verify
   kind:
     cmds:
+      - cmd: kind delete cluster
+        ignore_error: true
       - kind create cluster
       - kind load image-archive ./emissary-docker.tar
+  boostrap-cluster:
+    cmds:
+      - task: kind
+      - task: install-istio
+      - task: install-emissary
+      - task: emissary-crs
+      - task: restart-emissary

@@ -1,8 +1,8 @@
 VERSION 0.7
 ARG --global IMAGE_BASE_NAME=emissary
 ARG --global EMISSARY_REPO=github.com/emissary-ingress/emissary
-ARG --global VERSION=v3.5
-ARG --global CHART_VERSION=v8.5
+ARG --global VERSION=v3.5.1
+ARG --global CHART_VERSION=v8.5.1
 
 emissary-build-context:
     FROM earthly/dind:alpine
@@ -36,18 +36,17 @@ emissary-dockerfile:
     WITH DOCKER
         RUN make images && \
             docker image ls && \
-            docker save emissary.local/emissary:latest | gzip > /tmp/emissary-docker.tar.gz
+            docker save emissary.local/emissary:latest -o /tmp/emissary-docker.tar
     END
-    SAVE ARTIFACT /tmp/emissary-docker.tar.gz emissary-docker.tar.gz
+    SAVE ARTIFACT /tmp/emissary-docker.tar AS LOCAL emissary-docker.tar
     SAVE IMAGE emissary-build
 
 test:
     FROM earthly/dind:alpine
-    COPY +emissary-dockerfile/emissary-docker.tar.gz ./
+    COPY +emissary-dockerfile/emissary-docker.tar ./
     COPY --dir yaml ./
     COPY Taskfile.yml ./
-    RUN apk add curl gzip bash go-task-task
-    RUN gunzip emissary-docker.tar.gz
+    RUN apk add curl bash go-task-task
     RUN curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.17.0/kind-linux-arm64 && \
                             chmod +x ./kind && \
                             mv ./kind /usr/local/bin/kind
@@ -57,11 +56,7 @@ test:
     RUN helm repo add datawire https://app.getambassador.io && helm repo update
     WITH DOCKER
           RUN sleep 5 &&  \
-          task kind && \
-          task install-istio && \
-          task install-emissary && \
-          task emissary-crs && \
-          task restart-emissary
+          task boostrap-cluster
     END
 
 all:
