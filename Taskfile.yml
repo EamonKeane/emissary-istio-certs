@@ -3,7 +3,7 @@ tasks:
   earthly: earthly --allow-privileged --interactive --verbose +all
   emissary-crs: kubectl apply -f yaml/emissary-crs
   restart-emissary: kubectl rollout restart deployment/emissary-ingress -n emissary
-  open-ambassador-admin: kubectl port-forward deploy/emissary-ingress 8877:8877
+  open-ambassador-admin: kubectl port-forward -n emissary deploy/emissary-ingress 8877:8877
   dump-enovy-config:
     cmds:
       - kubectl exec deploy/emissary-ingress -n emissary -- curl localhost:15000/config_dump --output /tmp/envoy.json
