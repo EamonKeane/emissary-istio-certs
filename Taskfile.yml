@@ -1,0 +1,4 @@
+version: 3
+tasks:
+  earthly: earthly --allow-privileged --interactive --verbose +all
+  docker-registry: docker run -d -p 5001:5000 --restart=always --name registry registry:2

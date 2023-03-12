@@ -1,0 +1,10 @@
+apiVersion: getambassador.io/v2
+kind: TLSContext
+metadata:
+  name: upstream
+  namespace: ambassador-authorization
+spec:
+  ambassador_id: $AMBASSADOR_ID
+  secret: istio-certs
+  secret_namespacing: False
+  alpn_protocols: istio
