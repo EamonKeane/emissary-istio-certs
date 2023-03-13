@@ -4,6 +4,7 @@ tasks:
   emissary-crs: kubectl apply -f yaml/emissary-crs
   restart-emissary: kubectl rollout restart deployment/emissary-ingress -n emissary
   open-ambassador-admin: kubectl port-forward -n emissary deploy/emissary-ingress 8877:8877
+  undo-commit: git revert --no-commit 6a6a2f5263681e09263d07a7a0ad295904c46cb2
   dump-enovy-config:
     cmds:
       - kubectl exec deploy/emissary-ingress -n emissary -- curl localhost:15000/config_dump --output /tmp/envoy.json
@@ -32,3 +33,4 @@ tasks:
       - task: install-emissary
       - task: emissary-crs
       - task: restart-emissary
+  local-registry: docker run -d -p 5001:5000 --restart=always --name registry registry:2
