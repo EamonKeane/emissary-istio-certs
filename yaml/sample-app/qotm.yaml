@@ -25,6 +25,9 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/agentLogLevel: debug
+        sidecar.istio.io/logLevel: debug
       labels:
         app: quote
     spec:
@@ -100,7 +103,7 @@ spec:
       simple: ROUND_ROBIN
     connectionPool:
       tcp:
-        connectTimeout: 30ms
+        connectTimeout: 200ms
         maxConnections: 100
         tcpKeepalive:
           interval: 75s
@@ -110,27 +113,11 @@ spec:
       labels:
         app: quote
 ---
-apiVersion: networking.istio.io/v1alpha3
-kind: DestinationRule
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
 metadata:
-  name: quote-rule
+  name: default
   namespace: quote
 spec:
-  host: quote.quote.svc.cluster.local
-  trafficPolicy:
-    tls:
-      mode: ISTIO_MUTUAL
-    loadBalancer:
-      simple: ROUND_ROBIN
-    connectionPool:
-      tcp:
-        connectTimeout: 30ms
-        maxConnections: 1
-        tcpKeepalive:
-          interval: 1s
-          time: 1s
-  subsets:
-    - name: v1
-      labels:
-        app: quote
----
+  mtls:
+    mode: STRICT

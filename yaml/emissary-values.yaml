@@ -18,6 +18,7 @@ podAnnotations:
       SECRET_TTL: 1m
   sidecar.istio.io/inject: "true"
   sidecar.istio.io/agentLogLevel: debug
+  sidecar.istio.io/logLevel: debug
   sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-certs"}]'
   traffic.sidecar.istio.io/includeInboundPorts: ""
   traffic.sidecar.istio.io/includeOutboundIPRanges: ""
