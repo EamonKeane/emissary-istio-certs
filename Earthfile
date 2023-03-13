@@ -1,13 +1,13 @@
 VERSION 0.7
 ARG --global IMAGE_BASE_NAME=emissary
-ARG --global EMISSARY_REPO=github.com/emissary-ingress/emissary
+ARG --global EMISSARY_REPO=github.com/EamonKeane/emissary
 ARG --global VERSION=v3.5.1
 ARG --global CHART_VERSION=v8.5.1
 
 emissary-build-context:
     FROM earthly/dind:alpine
     RUN apk add git
-    GIT CLONE --branch ${VERSION} https://${EMISSARY_REPO}.git emissary
+    GIT CLONE https://${EMISSARY_REPO}.git emissary
     SAVE ARTIFACT /emissary AS LOCAL ./emissary
 
 kubectl:

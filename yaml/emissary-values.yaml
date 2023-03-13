@@ -4,12 +4,18 @@ image:
 
 replicaCount: 1
 module: ''
+createDefaultListeners: true
+
+env:
+  AMBASSADOR_ISTIO_SECRET_DIR: "/etc/istio-certs"
+  AMBASSADOR_ENVOY_BASE_ID: "1"
 
 podAnnotations:
   proxy.istio.io/config: |
     holdApplicationUntilProxyStarts: true
     proxyMetadata:
       OUTPUT_CERTS: /etc/istio-certs
+      SECRET_TTL: 1m
   sidecar.istio.io/inject: "true"
   sidecar.istio.io/agentLogLevel: debug
   sidecar.istio.io/userVolumeMount: '[{"name": "istio-certs", "mountPath": "/etc/istio-certs"}]'
@@ -22,3 +28,9 @@ volumes:
   - name: istio-certs
     emptyDir:
       medium: Memory
+
+livenessProbe:
+  initialDelaySeconds: 5
+
+readinessProbe:
+  initialDelaySeconds: 5

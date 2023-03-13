@@ -1,4 +1,6 @@
 version: 3
+env:
+  EMISSARY_DOCKER_TARBALL: emissary-docker-mod.tar
 tasks:
   earthly: earthly --allow-privileged --interactive --verbose +all
   emissary-crs: kubectl apply -f yaml/emissary-crs
@@ -8,7 +10,15 @@ tasks:
   dump-enovy-config:
     cmds:
       - kubectl exec deploy/emissary-ingress -n emissary -- curl localhost:15000/config_dump --output /tmp/envoy.json
-      - kubectl cp -n emissary $(kubectl get pod -o jsonpath={..metadata.name} -l app.kubernetes.io/instance=emissary-ingress,app.kubernetes.io/name=emissary-ingress):/tmp/envoy.json ./envoy.json
+      - kubectl cp -n emissary $(kubectl get pod -o jsonpath={..metadata.name} -n emissary -l app.kubernetes.io/instance=emissary-ingress,app.kubernetes.io/name=emissary-ingress):/tmp/envoy.json ./envoy.json
+  install-sample-app: kubectl apply -f yaml/sample-app
+  restart-sample-app: kubectl rollout restart deploy/quote -n quote
+  send-request: curl --verbose 127.0.0.1:8443/backend/
+  port-forward-emissary-https: kubectl port-forward deploy/emissary-ingress -n emissary 8443:8443
+  kill_emissary_container: kubectl exec deploy/emissary-ingress -n emissary -c emissary-ingress /sbin/reboot
+  test-app:
+    cmds:
+      - task: send-request
   install-emissary:
     cmds:
       - kubectl apply -f https://app.getambassador.io/yaml/emissary/3.5.1/emissary-crds.yaml
@@ -25,12 +35,14 @@ tasks:
       - cmd: kind delete cluster
         ignore_error: true
       - kind create cluster
-      - kind load image-archive ./emissary-docker.tar
+      - kind load image-archive ./${EMISSARY_DOCKER_TARBALL}
   boostrap-cluster:
     cmds:
       - task: kind
       - task: install-istio
       - task: install-emissary
       - task: emissary-crs
+      - task: emissary-crs
+      - task: install-sample-app
       - task: restart-emissary
   local-registry: docker run -d -p 5001:5000 --restart=always --name registry registry:2
